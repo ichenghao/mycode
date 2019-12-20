@@ -1,0 +1,129 @@
+Sub copySheets()
+'
+' Copy of template
+'
+    Const MAX_No As Integer = 650
+    Application.ScreenUpdating = False
+    For i = 1 To MAX_No
+        If i < 10 Then
+            sheet_title = "R00" & i
+        ElseIf i < 100 Then
+            sheet_title = "R0" & i
+        Else
+            sheet_title = "R" & i
+        End If
+            Sheets("temp").Copy Before:=Sheets("temp")
+            ActiveSheet.Name = sheet_title
+    Next
+    Application.ScreenUpdating = True
+End Sub
+
+Sub deleteUnwantedSheets()
+'
+' deleteUnwantedSheets Macro
+'
+    Const MAX_No As Integer = 650
+    On Error Resume Next
+    start_no = Int(InputBox("Please input the recommendations start number that you want to DELETE:", "Start No"))
+    end_no = Int(InputBox("Please input the recommendations end number that you want to DELETE:", "End No"))
+    
+    If Err.Number <> 0 Or start_no <= 0 Or start_no > end_no Then
+        Err.Clear
+        MsgBox "You input invalid numbers! This Macro is about to exit."
+        Exit Sub
+    End If
+    
+    Dim unwanted(MAX_No) As String
+
+    For i = start_no To end_no
+        If i < 10 Then
+            sheet_name = "R00" & i
+        ElseIf i < 100 Then
+            sheet_name = "R0" & i
+        Else
+            sheet_name = "R" & i
+        End If
+        unwanted(i) = sheet_name
+    Next
+
+    Application.DisplayAlerts = False
+    For i = start_no To end_no
+        On Error Resume Next
+        Worksheets(unwanted(i)).Delete
+    Next
+    Application.DisplayAlerts = True
+End Sub
+
+Sub retainRequiredSheets()
+'
+' Retain Sheets Macro
+'
+    Const MAX_No As Integer = 600
+    On Error Resume Next
+    start_no = Int(InputBox("Please input the recommendations start number that you want to retain:", "Start No"))
+    end_no = Int(InputBox("Please input the recommendations end number that you want to retain:", "End No"))
+    
+    If Err.Number <> 0 Or start_no <= 0 Or start_no > end_no Then
+        Err.Clear
+        MsgBox "You input invalid numbers! This Macro is about to exit."
+        Exit Sub
+    End If
+    
+    Dim myRecom(MAX_No) As String
+    Dim unwanted(MAX_No) As String
+
+    For i = start_no To end_no
+        If i < 10 Then
+            sheet_name = "R00" & i
+        ElseIf i < 100 Then
+            sheet_name = "R0" & i
+        Else
+            sheet_name = "R" & i
+        End If
+        myRecom(i) = sheet_name
+    Next
+
+    unwanted_no = 0
+    For ws = 3 To Worksheets.Count
+        For j = start_no To end_no
+            mark = 0
+            If Worksheets(ws).Name = myRecom(j) Then Exit For
+            mark = 1
+        Next
+        If mark = 1 Then
+            unwanted_no = unwanted_no + 1
+            unwanted(unwanted_no) = Worksheets(ws).Name
+        End If
+    Next
+
+    Application.DisplayAlerts = False
+    If unwanted_no > 0 Then
+        For i = 1 To unwanted_no
+            Worksheets(unwanted(i)).Delete
+        Next
+    End If
+    Application.DisplayAlerts = True
+End Sub
+
+Sub summaryLessonLearned()
+'
+' Summary
+' To summarize all lessons learned on Sheet 'Summary'.
+
+    Sheets("Summary").Range("A8:N65535").Clear
+    startrow = 8
+    For i = 3 To Worksheets.Count
+        Worksheets(i).Select
+        lastrow = Range("B66535").End(xlUp).Row
+        Range("A7:L" & lastrow).Select
+        Selection.Copy
+        Sheets("Summary").Select
+        Range("B" & startrow).Select
+        ActiveSheet.Paste
+        startrow = startrow + lastrow - 6
+    Next
+    For i = 1 To startrow - 8
+        Range("A" & (i + 7)).Value = i
+    Next
+    Range("A6").Select
+End Sub
