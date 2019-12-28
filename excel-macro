@@ -27,7 +27,7 @@ Sub deleteUnwantedSheets()
     start_no = Int(InputBox("Please input the recommendations start number that you want to DELETE:", "Start No"))
     end_no = Int(InputBox("Please input the recommendations end number that you want to DELETE:", "End No"))
     
-    If Err.Number <> 0 Or start_no <= 0 Or start_no > end_no Then
+    If Err.Number <> 0 Or start_no <= 0 Or start_no > end_no Or end_no > MAX_No Then
         Err.Clear
         MsgBox "You input invalid numbers! This Macro is about to exit."
         Exit Sub
@@ -127,3 +127,65 @@ Sub summaryLessonLearned()
     Next
     Range("A6").Select
 End Sub
+
+
+Sub hazop_runningOnceIsOK()
+' to split HAZOP recommendation to separated sheet
+' run once only
+'
+    Application.ScreenUpdating = False
+    row_limit = 3500  'to be based on max row numbers
+    For r = 2 To row_limit
+        recommendation = Worksheets("hazop").Cells(r, 14).Value
+        If recommendation <> "" Then
+            recom = Split(recommendation, ".", 2)
+            sheet_title = "R" & String(3 - Len(recom(0)), "0") & recom(0)
+            For Each ws In Worksheets
+                mark = 0
+                If sheet_title = ws.Name Then
+                    mark = 1
+                    Exit For
+                End If
+            Next
+            If mark = 0 Then        'mark 0 means not duplicated recommendation
+                Sheets("temp").Copy before:=Sheets("temp")
+                Sheets("temp (2)").Name = sheet_title
+                Worksheets(sheet_title).Range("B8") = "'" & Right(sheet_title, 3)               'recommendation no
+                Worksheets(sheet_title).Range("A16") = recom(1)                                 'recommendation
+                Worksheets(sheet_title).Range("B6") = Worksheets("hazop").Cells(r, 1).Value     'node
+                Worksheets(sheet_title).Range("B7") = Worksheets("hazop").Cells(r, 2).Value     'topic
+                Worksheets(sheet_title).Range("B9") = Worksheets("hazop").Cells(r, 15).Value    'response by
+                Worksheets(sheet_title).Range("A12") = Worksheets("hazop").Cells(r, 6).Value    'item
+                Worksheets(sheet_title).Range("A14") = Worksheets("hazop").Cells(r, 7).Value    'cause
+                Worksheets(sheet_title).Range("A16") = Worksheets("hazop").Cells(r, 8).Value    'consequence
+                Worksheets(sheet_title).Range("B4") = Worksheets("hazop").Cells(r, 16).Value    'p&id no
+            Else
+                Worksheets(sheet_title).Range("B6") = combine(Worksheets(sheet_title).Range("B6"), Worksheets("hazop").Cells(r, 1).Value)   'node
+                Worksheets(sheet_title).Range("B7") = combine(Worksheets(sheet_title).Range("B7"), Worksheets("hazop").Cells(r, 2).Value)   'topic
+                Worksheets(sheet_title).Range("B9") = combine(Worksheets(sheet_title).Range("B9"), Worksheets("hazop").Cells(r, 15).Value)  'response by
+                Worksheets(sheet_title).Range("A12") = combine(Worksheets(sheet_title).Range("A12"), Worksheets("hazop").Cells(r, 6).Value) 'item
+                Worksheets(sheet_title).Range("A14") = combine(Worksheets(sheet_title).Range("A14"), Worksheets("hazop").Cells(r, 7).Value) 'cause
+                Worksheets(sheet_title).Range("A16") = combine(Worksheets(sheet_title).Range("A16"), Worksheets("hazop").Cells(r, 8).Value) 'consequence
+                Worksheets(sheet_title).Range("B4") = combine(Worksheets(sheet_title).Range("B4"), Worksheets("hazop").Cells(r, 16).Value)  'p&id no
+            End If
+        End If
+    Next
+    
+    'sort the sheets in an alphabetical order
+    For i = 3 To Worksheets.Count - 3
+        For j = i + 1 To Worksheets.Count - 2
+            If UCase(Sheets(j).Name) < UCase(Sheets(i).Name) Then
+                Sheets(j).Move before:=Sheets(i)
+            End If
+        Next
+    Next
+
+    Worksheets("hazop").Visible = False
+    Worksheets("temp").Visible = False
+    Application.ScreenUpdating = True
+End Sub
+
+Function combine(s1 As String, s2 As String) As String
+    If s1 <> s2 Then s1 = s1 & Chr(10) & s2
+    combine = s1
+End Function
